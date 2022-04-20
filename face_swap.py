@@ -51,7 +51,8 @@ while True:
     dets = detector(img_gray, 1)
     roi = np.zeros(img_frame.shape, np.uint8)
     mask = []
-    rois =[]
+    rois = []
+    result = []
 
     for face in dets:
         shape = predictor(img_frame, face)  # 얼굴에서 68개 점 찾기
@@ -92,8 +93,8 @@ while True:
         # rois.append(ret.copy())
         mask.append(_masked.copy())
 
-        ret = img_rst[face.top(): face.bottom(), face.left(): face.right()]
-        rois.append(ret) # rois에 인식된 얼굴들의 각 RoI를 저장
+        rois.append(img_rst[face.top(): face.bottom(), face.left(): face.right()]) # rois에 인식된 얼굴들의 각 RoI를 저장
+        result.append(img_copy[face.top(): face.bottom(), face.left(): face.right()]) # 얼굴 합성할 베이스
 
     # for i in range(len(rois)):
     #     cv.imshow('rois'+str(i), rois[i])
@@ -109,13 +110,13 @@ while True:
             _mask = mask[i].copy()
             _mask = cv.resize(_mask, dsize=(rois[j].shape[1], rois[j].shape[0]))
             # ret = cv.bitwise_and(_mask, temp)
-            cv.copyTo(temp, _mask, rois[j])
+            cv.copyTo(temp, _mask, result[j])
             # cv.imshow("re", ret)
             # cv.imshow("ro", rois[j])
     #### debug
     if DEBUG:
         cv.imshow("dot", cv.resize(img_pred, (0, 0), fx=0.5, fy=0.5))
-    cv.imshow('result', img_rst)
+    cv.imshow('result', img_copy)
     key = cv.waitKey(30)
     if key == 27:
         break
