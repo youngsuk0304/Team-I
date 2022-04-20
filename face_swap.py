@@ -93,7 +93,7 @@ while True:
         mask.append(_masked.copy())
 
         ret = img_rst[face.top(): face.bottom(), face.left(): face.right()]
-        rois.append(ret.copy()) # rois에 인식된 얼굴들의 각 RoI를 저장
+        rois.append(ret) # rois에 인식된 얼굴들의 각 RoI를 저장
 
     # for i in range(len(rois)):
     #     cv.imshow('rois'+str(i), rois[i])
@@ -105,13 +105,13 @@ while True:
             if i == len(rois)-1:
                 j = 0
             temp = rois[i].copy()
-            temp = cv.resize(temp, dsize=(rois[j].shape[:2]))
+            temp = cv.resize(temp, dsize=(rois[j].shape[1], rois[j].shape[0]))
             _mask = mask[i].copy()
-            _mask = cv.resize(_mask, dsize=(rois[j].shape[:2]))
-            ret = cv.bitwise_and(_mask, temp)
-            # cv.copyTo(ret, rois[j])
-            cv.imshow("re", ret)
-            cv.imshow("ro", rois[j])
+            _mask = cv.resize(_mask, dsize=(rois[j].shape[1], rois[j].shape[0]))
+            # ret = cv.bitwise_and(_mask, temp)
+            cv.copyTo(temp, _mask, rois[j])
+            # cv.imshow("re", ret)
+            # cv.imshow("ro", rois[j])
     #### debug
     if DEBUG:
         cv.imshow("dot", cv.resize(img_pred, (0, 0), fx=0.5, fy=0.5))
