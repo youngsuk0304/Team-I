@@ -37,35 +37,36 @@ NOSELINE = list((29, 31, 32, 33, 34, 35, 36))
 FACE_OUTLINE = list(range(0, 28))
 
 index = ALL
+if DEBUG:
+    img_frame = cv.resize(cv.imread("people.jpg"), (0,0), fx=0.4, fy=0.4)
 
 while True:
-    ret, img_frame = cap.read()
-    img_rst = img_frame.copy()
+    if not DEBUG:
+        ret, img_frame = cap.read()
+    img_pred = img_frame.copy() # 출력 용 이미지
+    img_rst = img_frame.copy() # 출력 용 이미지
+    img_copy = img_frame.copy() # 원본 이미지 복사 -> img_copy
 
     img_gray = cv.cvtColor(white_balance(img_frame), cv.COLOR_BGR2GRAY)
     dets = detector(img_gray, 1)
-    rois =[]
     roi = np.zeros(img_frame.shape, np.uint8)
-    copy_pt = []
     mask = []
+    rois =[]
 
     for face in dets:
         shape = predictor(img_frame, face)  # 얼굴에서 68개 점 찾기
-        img_copy = img_frame.copy()
         list_points = []
-        for p in shape.parts():
+        _mask = np.zeros(img_frame.shape, np.uint8)
+        for p in shape.parts(): # 점 68개 리스트
             list_points.append([p.x, p.y])
-
-        if DEBUG:
-            print(copy_pt)
 
         list_points = np.array(list_points)
 
         for i, pt in enumerate(list_points[index]):
             pt_pos = (pt[0], pt[1])
-            cv.circle(img_frame, pt_pos, 2, (0, 255, 0), -1)
-        cv.rectangle(img_frame, (face.left(), face.top()), (face.right(), face.bottom()), (0, 0, 255), 3)
-
+            cv.circle(img_pred, pt_pos, 2, (0, 255, 0), -1)
+        cv.rectangle(img_pred, (face.left(), face.top()), (face.right(), face.bottom()), (0, 0, 255), 3)
+        # img_frame에 얼굴 점들과 네모가 그려져 있다.
         ####
         test = np.array(
         [[list_points[14][0], list_points[14][1]], [list_points[13][0], list_points[13][1]],
@@ -83,36 +84,39 @@ while True:
          [list_points[26][0], list_points[26][1]], [list_points[16][0], list_points[16][1]],
          [list_points[15][0], list_points[15][1]]], np.int32)
 
-        _mask = cv.polylines(img_copy, [test], True, (255, 255, 255))
-        _mask = cv.fillPoly(_mask, [test], (255, 255, 255))
-        cv.threshold(_mask, 254, 255, cv.THRESH_BINARY, _mask)
+        # 제로 이미지에 얼굴 위치를 잡아 백색 다각형을 생성 -> 마스킹용
+        _mask = cv.fillPoly(cv.polylines(_mask, [test], True, (255, 255, 255)), [test], (255, 255, 255))
+        # cv.threshold(_mask, 254, 255, cv.THRESH_BINARY, _mask)
         # ret = cv.bitwise_and(_mask, img_copy)
         _masked = _mask[face.top(): face.bottom(), face.left(): face.right()]
         # rois.append(ret.copy())
         mask.append(_masked.copy())
 
-        ret = img_frame[face.top(): face.bottom(), face.left(): face.right()]
-        rois.append(ret.copy())
+        ret = img_rst[face.top(): face.bottom(), face.left(): face.right()]
+        rois.append(ret.copy()) # rois에 인식된 얼굴들의 각 RoI를 저장
 
-    for i in range(len(rois)):
-        cv.imshow('rois'+str(i), rois[i])
-        cv.imshow("mask"+str(i), mask[i])
-    # cv.imshow("ret", ret)
+    # for i in range(len(rois)):
+    #     cv.imshow('rois'+str(i), rois[i])
+    #     cv.imshow("mask"+str(i), mask[i])
 
-    #if len(rois) > 1:
-    #     for i in range(len(rois)):
-    #         if i == len(rois)-1:
-    #             # i -> 0
-    #             pass
-    #         #height, width = rois[i].shape[:2]
-    #         #center = (width//2, height//2)
-    #         #cv.seamlessClone(rois[i+1], img_frame, mask[i], center, cv.NORMAL_CLONE)
-    #         print("COPY2222222222")
-    #         cv.copyTo(img_rst, mask[i], rois[1])
-
-
+    if len(rois) > 1: # 얼굴이 둘 이상 인식되었을 때
+        for i in range(len(rois)):
+            j = i + 1
+            if i == len(rois)-1:
+                j = 0
+            temp = rois[i].copy()
+            temp = cv.resize(temp, dsize=(rois[j].shape[:2]))
+            _mask = mask[i].copy()
+            _mask = cv.resize(_mask, dsize=(rois[j].shape[:2]))
+            ret = cv.bitwise_and(_mask, temp)
+            # cv.copyTo(ret, rois[j])
+            cv.imshow("re", ret)
+            cv.imshow("ro", rois[j])
+    #### debug
+    if DEBUG:
+        cv.imshow("dot", cv.resize(img_pred, (0, 0), fx=0.5, fy=0.5))
     cv.imshow('result', img_rst)
-    key = cv.waitKey(1)
+    key = cv.waitKey(30)
     if key == 27:
         break
     elif key == ord('1'):
