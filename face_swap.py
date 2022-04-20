@@ -17,7 +17,7 @@ def white_balance(_frame):
 
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture(0 + cv.CAP_DSHOW)
 #### debug
 if DEBUG:
     img_frame = cv.imread("people.jpg")
