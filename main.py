@@ -30,7 +30,7 @@ def mode_changer(img, md):
     elif md == 6: # 거울
         y, x = img.shape[:2]
         mask = np.zeros((y, x), np.uint8)
-        cv.rectangle(mask, (int(x/2), 0), (x, y), (255, 255, 255), -1)
+        cv.rectangle(mask, (int(x/2), 0), (x, y), white_color, -1)
         temp = cv.flip(img.copy(), 1)
         cv.copyTo(temp, mask, rst)
     elif md == 7: # 분할 화면
@@ -39,7 +39,8 @@ def mode_changer(img, md):
         y, x = img.shape[:2]
         _x_len = int(x/grid)
         for num in range(grid):
-            rst[0:y, int(num * _x_len):int((num+1) * _x_len)] = temp[0:y, int(x / 2 - _x_len / 2):int(x / 2 + _x_len / 2)]
+            rst[0:y, int(num * _x_len):int((num+1) * _x_len)] = \
+                temp[0:y, int(x / 2 - _x_len / 2):int(x / 2 + _x_len / 2)]
     return rst
 
 
@@ -74,8 +75,7 @@ def face_swap(cam):
                 mask_pt.append([list_points[x][0], list_points[x][1]])
 
             # 제로 이미지에 얼굴 위치를 잡아 백색 다각형을 생성 -> 마스킹용
-            _mask = cv.fillPoly(cv.polylines(_mask, [np.int32(mask_pt)], True, (255, 255, 255)), [np.int32(mask_pt)],
-                                (255, 255, 255))
+            _mask = cv.fillPoly(cv.polylines(_mask, [np.int32(mask_pt)], True, white_color), [np.int32(mask_pt)], white_color)
             _masked = _mask[face.top(): face.bottom(), face.left(): face.right()]
             mask.append(_masked.copy())
 
@@ -173,7 +173,8 @@ def face_background(cam):
         img_copy = img_frame.copy()  # 원본 이미지 복사 -> img_copy
 
         bg_img = cv.imread('test_img.jpg')  # 배경이미지 가져오기
-        x, y, w, h = 220, 120, 150, 170  # roi 영역 수동으로 지정
+        # roi 영역 수동으로 지정
+        x, y, w, h = 220, 120, 150, 170
         bg_roi = bg_img[y:y + h, x:x + w]  # roi 영역 지정
 
         img_gray = cv.cvtColor(white_balance(img_frame), cv.COLOR_BGR2GRAY)
@@ -184,7 +185,14 @@ def face_background(cam):
             shape = predictor(img_frame, face)  # 얼굴에서 68개 점 찾기
             list_points = []
             _mask = np.zeros(img_frame.shape, np.uint8)  # 원본 이미지 shape
-            for p in shape.parts():  # 점 68개 리스트
+
+            for i, p in enumerate(shape.parts()):  # 점 68개 리스트
+                if 17<=i<=26:
+                    p.y-=20
+                if i==20 or i==23:
+                    p.y-=20
+                elif i==21 or i ==22:
+                    p.y-=30
                 list_points.append([p.x, p.y])
 
             list_points = np.array(list_points)
@@ -196,10 +204,8 @@ def face_background(cam):
                 mask_pt.append([list_points[x][0], list_points[x][1]])
 
             # 제로 이미지에 얼굴 위치를 잡아 백색 다각형을 생성 -> 마스킹용
-            _mask = cv.fillPoly(cv.polylines(_mask, [np.int32(mask_pt)], True, (255, 255, 255)), [np.int32(mask_pt)],
-                                (255, 255, 255))
+            _mask = cv.fillPoly(cv.polylines(_mask, [np.int32(mask_pt)], True, white_color), [np.int32(mask_pt)], white_color)
             _masked = _mask[face.top(): face.bottom(), face.left(): face.right()]
-
             rois = img_rst[face.top(): face.bottom(), face.left(): face.right()]  # rois에 인식된 얼굴들의 각 RoI를 저장
 
             # 마스크로 떼어낸 얼굴을 resize 적용 필요
@@ -209,7 +215,7 @@ def face_background(cam):
             cv.imshow("bg_img", bg_img)
         key = cv.waitKey(30)
         if key == 27:
-            return
+            break
     cv.destroyAllWindows()
 
 
