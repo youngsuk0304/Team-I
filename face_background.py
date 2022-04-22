@@ -42,27 +42,14 @@ while True:
         shape = predictor(img_frame, face)  # 얼굴에서 68개 점 찾기
         list_points = []
         _mask = np.zeros(img_frame.shape, np.uint8)  # 원본 이미지 shape
-        ck=0
-
-        tempy=0
-
         for p in shape.parts(): # 점 68개 리스트
-            if ck==0:
-                tempy=p.y
-            if ck==2:
-                tempy-=p.y
-            if 17<= ck <=26:
-                list_points.append([p.x,p.y+tempy])
-            else :
-                list_points.append([p.x, p.y])
-            ck+=1
+            list_points.append([p.x, p.y])
 
         list_points = np.array(list_points)
 
 
         pt = list(range(0, 27))
         pt[17:27] = pt[26:16:-1]
-        del pt[20:24]
         mask_pt = []
         for x in pt:
             mask_pt.append([list_points[x][0], list_points[x][1]])
@@ -72,8 +59,8 @@ while True:
         _masked = _mask[face.top(): face.bottom(), face.left(): face.right()]
         mask.append(_masked.copy())
 
-        rois.append(img_rst[face.top()-50: face.bottom(), face.left(): face.right()]) # rois에 인식된 얼굴들의 각 RoI를 저장
-        result.append(img_copy[face.top()-30: face.bottom()+30, face.left()-50: face.right()+50]) # 얼굴 합성할 베이스
+        rois.append(img_rst[face.top(): face.bottom(), face.left(): face.right()]) # rois에 인식된 얼굴들의 각 RoI를 저장
+        result.append(img_copy[face.top(): face.bottom(), face.left(): face.right()]) # 얼굴 합성할 베이스
 
         # 마스크로 떼어낸 얼굴을 resize 적용 필요
         rs_img = cv.resize(rois[0], dsize=(w, h), interpolation=cv2.INTER_LINEAR)
